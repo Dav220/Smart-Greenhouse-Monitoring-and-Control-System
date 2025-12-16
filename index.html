@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title id="header">Smart Greenhouse System</title>
+    
+</head>
+  <body style="background: color #ecffe8;">
+    
+    <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q" crossorigin="anonymous"></script> -->
+    <nav class="navbar navbar-expand-md navbar-light border" style="background-color:#bcf8b0;">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">Smart Greenhouse System</a>
+
+                    <ul class="navbar-nav ms-auto mt-2">
+                        <li class="nav-item"><a class="nav-link" href="/register">Register</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/login">Login</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
+                    </ul>
+            </div>
+        </nav>
+
+    <div id="sensorButtons" class="py-5 text-center">
+        <button class="btn btn-primary" id="trackButton">Track Data</button>
+        <button class="btn btn-primary" id="waterButton">Water</button>
+    </div>
+
+    <div class="chart">
+        <canvas id="tempChart"></canvas>
+    </div>
+
+    <div class="chart">
+        <canvas id="humiChart"></canvas>
+    </div>
+
+    <div class="chart">
+        <canvas id="moistChart"></canvas>
+    </div>
+
+    <div class="buttons">
+
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <!-- <script src="<script src=/socket.io/socket.io.js"></script> -->
+    
+
+    <script>
+         
+        document.addEventListener("DOMContentLoaded", function () {
+        const url = "..."; // url of your app server.
+        const readingsUrl = ".../readings"; // url of your app server
+        
+
+        //Establishing a connection to the server
+
+        var socket;
+        try {
+            socket = io.connect("... (app server url"); 
+        } 
+        catch(error) {
+            console.error(error.message);
+        }
+        
+        
+        
+        const tempChart = document.getElementById('tempChart');
+        const humiChart = document.getElementById('humiChart');
+        const moistChart = document.getElementById('moistChart');
+        const trackButton = document.getElementById('trackButton');
+        const waterButton = document.getElementById('waterButton');
+        var tracking = false;
+        var watering = false;
+        
+        trackButton.addEventListener('click', function() {
+            if (tracking == false) {
+                trackButton.innerHTML = "Tracking Data";
+                tracking = true;
+                //trackData();
+            }
+
+            else if (tracking == true) {
+                trackButton.innerHTML = "Track Data";
+                tracking = false;
+            }
+        })
+
+        waterButton.addEventListener('click', function() {
+            if (watering == false) {
+                waterButton.innerHTML = "Watering";
+                watering = true;
+                 socket.emit('watering', {'status':true});
+            }
+
+            else {
+                waterButton.innerHTML = "Water";
+                watering = false;
+                socket.emit('watering', {'status': false});
+            }
+        })
+
+        
+
+
+        async function getData() {
+            try {
+                var response = await fetch(readingsUrl)
+                if (!response.ok) {
+                    console.log(`Error trying to fetch the api:  ${response.status}`);
+                }
+
+                let sensorData = await response.json();
+                if (!sensorData.ok) {
+                    console.log(`Error trying to read the sensor Data: ${sensorData.status}`);
+                }
+
+                return sensorData;
+            }
+
+            catch(error) {
+                console.error(error.message);
+            }
+        }
+    
+
+
+
+
+         // rejecting for development
+        socket.on('connect', function () {
+            console.log("Connected to api!\n");
+        });
+
+        socket.on('connect_error', (error) => {
+            // This event tells you why the connection failed
+            console.error('Connection failed:', error.message);
+        });
+
+        let tempChartInstance;
+        let humiChartInstance;
+        let moistChartInstance;
+
+        getData().then((sensorData) => {
+            try {
+                tempChartInstance = new Chart(tempChart, {
+                    type: 'line',
+                    data: {
+                        labels: sensorData.map(d => d.time),
+                        datasets: [{
+                            label: 'Temperature Sensor Readings',
+                            data: sensorData.map(d => d.temp),
+                            fill: false,
+                            borderColor: "blue",
+                            borderWidth: 1,
+                            tension: 0.4
+                        }]
+                    }
+                });
+
+                humiChartInstance = new Chart(humiChart, {
+                    type: 'line',
+                    data: {
+                        labels: sensorData.map(d => d.time),
+                        datasets: [{
+                            label: 'Humidity Sensor Readings',
+                            data: sensorData.map(d => d.hum),
+                            fill: false,
+                            borderColor: "red",
+                            borderWidth: 1
+                            //tension: 0.4
+                        }]
+                    }
+                });
+
+                 moistChartInstance = new Chart(moistChart, {
+                     type: 'line',
+                     data: {
+                         labels: sensorData.map(d => d.time),
+                         datasets: [{
+                             label: 'Moisture Sensor Readings',
+                             data: sensorData.map(d => d.moist),
+                             fill: false,
+                             borderColor: "green",
+                             borderWidth: 1
+                         }]
+                     }
+                 });
+            }
+
+            catch(error) {
+                console.log(error.message);
+            }
+        });
+
+        
+
+        async function trackData() {
+            var status;
+            if (tracking) {
+                try {
+                        status = await fetch(url, {
+                        method: "POST",
+                        body: {"status": true},
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    });
+                }
+
+                catch (error) {
+                    console.log(error.message);
+                }
+            }
+
+            else {
+                try {
+                        status = await fetch(url, {
+                        method: "POST",
+                        body: {"status": false},
+                         headers: {
+                             "Content-Type": "application/json"
+                         }
+                    });
+                }
+
+                catch (error) {
+                    console.log(error.message);
+                }
+            }
+        }
+
+         
+             socket.addEventListener('readings_update', (data) => {
+                if (tracking) {
+                    socket.emit('confirmation', {'add_to_db': true});
+                    //confirmation = fetch(readingsUrl, {method: "POST", body: {"add_to_db": true}});
+                    tempChartInstance.data.labels.push(data.time);
+                    tempChartInstance.data.datasets[0].data.push(data.temp);
+                    tempChartInstance.update();
+                    console.log(`Data: temp: ${data.temp}, hum: ${data.hum}, time: ${data.time}`);
+
+                    humiChartInstance.data.labels.push(data.time);
+                    humiChartInstance.data.datasets[0].data.push(data.hum);
+                    humiChartInstance.update();
+
+                    moistChartInstance.data.labels.push(data.time);
+                    moistChartInstance.data.datasets[0].data.push(data.moist);
+                    moistChartInstance.update();
+
+                    //trackData();
+                }
+                 
+             }
+         );
+
+        socket.on('disconnect', () => {
+            console.log("Disconnected from server!")
+        });
+            
+            
+        
+    });
+    </script>
+  </body>
+</html>
