@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title id="header">Smart Greenhouse System</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+        <link href="{{ url_for('static', filename='css/styles.css') }}" type="text/css" rel="stylesheet">
+    </head>
+
+    <body style="background-color: #ecffe8;">
+        <nav class="navbar navbar-expand-md navbar-light border" style="background-color:#bcf8b0;">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/index">Smart Greenhouse System</a>
+
+                    <ul class="navbar-nav ms-auto mt-2">
+                        <li class="nav-item"><a class="nav-link" href="/register">Register</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/login">Login</a></li>
+                    </ul>
+            </div>
+        </nav>
+
+        <form action="/register" method="post">
+            <div class="mb-3 mt-3">
+                <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="username" name="username" placeholder="Username" type="text">
+            </div>
+
+            <div class="mb-3 mt-3">
+                <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="email" name="email" placeholder="Email" type="text">
+            </div>
+
+            <div class="mb-3">
+                <input class="form-control mx-auto w-auto" id="password" name="password" placeholder="Password" type="text">
+            </div>
+            <div class="mb-3" id="confirm_text">
+                <input class="form-control mx-auto w-auto" id="confirmation" name="confirmation" placeholder="Confirm Password" type="text">
+                <p id = "confirmation text"></p>
+            </div>
+            
+            <div class="py-5 text-center">
+                <button class="btn btn-primary" type="submit">Register</button>
+            </div>
+        </form>
+    </body>
+
+    <script>
+        // Writing script for password confirmation text
+        document.addEventListener('DOMContentLoaded', function() {
+            let password = document.querySelector("#password");
+            let password_confirmation = document.querySelector("#confirmation");
+
+            if (password != password_confirmation) {
+                let paragraph = document.getElementById("confirm_text");
+                password_confirmation.parentElement.querySelector('#confirmation text').innerHTML = "Passwords must match!";
+
+
+            }
+
+            else {
+                password_confirmation.parentElement.querySelector('#confirmation text').innerHTML = "Passwords match";
+            }
+        });
+    </script>
+</html>
